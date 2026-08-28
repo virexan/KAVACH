@@ -18,7 +18,7 @@ export const PressurePointList: React.FC<Props> = ({ points }) => {
       {points.length === 0 ? (
         <p className="text-xs text-textMuted font-bold">No organizational pressure points detected.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-4">
           {points.map((p) => (
             <PressurePointCard key={p.id} point={p} />
           ))}

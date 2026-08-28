@@ -29,6 +29,7 @@ export interface DesignTokens {
     bodySmall: string;
     caption: string;
     label: string;
+    tiny: string;
   };
   spacing: {
     xs: string;
@@ -91,6 +92,7 @@ export const tokens: DesignTokens = {
     bodySmall: '0.875rem',     // 14px (minimum standard)
     caption: '0.75rem',        // 12px
     label: '0.875rem',         // 14px
+    tiny: '0.625rem',          // 10px
   },
   spacing: {
     xs: '4px',

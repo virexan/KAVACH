@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-28T22:51:00Z",
+  "title": "Design System: KAVACH Portal",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Calm Teal",
+        "canonical": "oklch(48% 0.12 186)",
+        "tonalRamp": ["#0b5650", "#0f766e", "#0d9488", "#14b8a6", "#2dd4bf", "#5eead4", "#99f6e4", "#ccfbf1"]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Slate Background",
+        "canonical": "oklch(97% 0.005 240)",
+        "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#cbd5e1", "#f1f5f9", "#f8fafc"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display Title",
+        "purpose": "Used strictly for page landing hero headers."
+      },
+      "body": {
+        "displayName": "Body Paragraph",
+        "purpose": "Standard reading copy texts."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-resting",
+        "value": "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
+        "purpose": "Standard borders outline layout container."
+      }
+    ],
+    "motion": [
+      {
+        "name": "fade-in",
+        "value": "200ms ease-in-out",
+        "purpose": "Used on route updates and panels slides."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "md",
+        "value": "768px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Used for main submission actions.",
+      "html": "<button class=\"ds-btn-primary\">Enter Platform</button>",
+      "css": ".ds-btn-primary { background: #0f766e; color: #ffffff; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; transition: background 150ms ease; } .ds-btn-primary:hover { background: #0d9488; }"
+    },
+    {
+      "name": "Risk Badge",
+      "kind": "chip",
+      "refersTo": "badge-risk",
+      "description": "Standard low-intensity status tag.",
+      "html": "<span class=\"ds-badge-elevated\"><span class=\"ds-dot\"></span>Elevated</span>",
+      "css": ".ds-badge-elevated { display: inline-flex; align-items: center; background: rgba(249, 115, 22, 0.1); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.2); font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 9999px; } .ds-dot { width: 6px; height: 6px; border-radius: 50%; background: #f97316; margin-right: 6px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Guided Shield",
+    "overview": "KAVACH focuses on structured layouts, desaturated tones, and progressive disclosure to convey safety, operational trust, and intelligence.",
+    "keyCharacteristics": [
+      "Calm brand colors",
+      "Clean grid rhythms",
+      "Low-intensity desaturated status badges"
+    ],
+    "rules": [
+      {
+        "name": "The Rarity of Brand Primary Rule",
+        "body": "The primary brand Teal accent is utilized on less than 10% of any screen surface to draw attention strictly to critical actions.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do map risk indicators to desaturated badges using the label + icon format.",
+      "Do preserve 24px padding inside widgets to prevent visual clutter."
+    ],
+    "donts": [
+      "Don't use high-intensity neon colors for headers.",
+      "Don't overlay multiple shadow layers on resting containers."
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "detector": {
+    "ignoreRules": [
+      "side-tab"
+    ],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font-size",
+        "value": "9px",
+        "createdAt": "2026-08-28T17:24:45.136Z"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "8px",
+        "createdAt": "2026-08-28T17:24:45.400Z"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-08-28T17:24:45.721Z"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "animate-bounce",
+        "createdAt": "2026-08-28T17:24:45.980Z"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "11px",
+        "createdAt": "2026-08-28T17:25:10.550Z"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "15px",
+        "createdAt": "2026-08-28T17:25:10.795Z"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "20px",
+        "createdAt": "2026-08-28T17:25:11.075Z"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "24px",
+        "createdAt": "2026-08-28T17:25:11.328Z"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "56px",
+        "createdAt": "2026-08-28T17:25:11.621Z"
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "5px",
+        "createdAt": "2026-08-28T17:25:11.871Z"
+      }
+    ]
+  }
+}
