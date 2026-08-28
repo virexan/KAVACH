@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Core PostgreSQL Database Container (FR-13, FR-68)
+  postgres:
+    image: postgres:15-alpine
+    container_name: kavach-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: kavach_welfare
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # FastAPI Backend API Server (FR-4)
+  kavach-backend:
+    container_name: kavach-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/kavach_welfare
+      - JWT_SECRET=super_secret_jwt_sign_key_for_development_purposes_only_change_in_production
+      - ENVIRONMENT=development
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # React + TypeScript Frontend Client (FR-68)
+  kavach-web:
+    container_name: kavach-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000/api/v1
+      - VITE_USE_MOCKS=false
+      - VITE_APP_ENV=production
+    depends_on:
+      - kavach-backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

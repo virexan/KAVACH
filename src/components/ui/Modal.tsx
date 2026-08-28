@@ -1,0 +1,131 @@
+import React, { useEffect, useRef } from 'react';
+import Button from './Button';
+
+export interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  className?: string;
+}
+
+export const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  footer,
+  className = '',
+}) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      previousFocus.current = document.activeElement as HTMLElement;
+      document.body.classList.add('focus-trap-active');
+      
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onClose();
+        if (e.key === 'Tab') {
+          const focusableElements = modalRef.current?.querySelectorAll(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          );
+          if (focusableElements && focusableElements.length > 0) {
+            const first = focusableElements[0] as HTMLElement;
+            const last = focusableElements[focusableElements.length - 1] as HTMLElement;
+            if (e.shiftKey && document.activeElement === first) {
+              last.focus();
+              e.preventDefault();
+            } else if (!e.shiftKey && document.activeElement === last) {
+              first.focus();
+              e.preventDefault();
+            }
+          }
+        }
+      };
+      
+      window.addEventListener('keydown', handleKeyDown);
+      
+      setTimeout(() => {
+        const firstFocus = modalRef.current?.querySelector('button, input, select, textarea, a') as HTMLElement;
+        if (firstFocus) firstFocus.focus();
+        else modalRef.current?.focus();
+      }, 50);
+
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        document.body.classList.remove('focus-trap-active');
+        if (previousFocus.current) previousFocus.current.focus();
+      };
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-textPrimary/40 backdrop-blur-sm transition-opacity duration-200"
+        onClick={onClose}
+      />
+
+      {/* Modal Dialog */}
+      <div
+        ref={modalRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        className={`relative w-full max-w-lg bg-surface border border-border rounded-xl shadow-modal z-10 flex flex-col focus:outline-none max-h-[85vh] ${className}`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border select-none">
+          <h3 id="modal-title" className="text-base font-bold text-textPrimary">
+            {title}
+          </h3>
+          <button
+            onClick={onClose}
+            aria-label="Close modal"
+            className="p-1 rounded-md text-textMuted hover:bg-surfaceAlt hover:text-textSecondary transition-colors focus:outline-none"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto flex-1 text-sm text-textSecondary leading-relaxed">
+          {children}
+        </div>
+
+        {/* Footer */}
+        {footer ? (
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border bg-surfaceAlt/20">
+            {footer}
+          </div>
+        ) : (
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border bg-surfaceAlt/20">
+            <Button variant="secondary" size="sm" onClick={onClose}>
+              Close
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+export default Modal;
