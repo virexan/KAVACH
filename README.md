@@ -2,6 +2,11 @@
 
 KAVACH is a secure, responsive React + TypeScript web application built using Vite, Tailwind CSS, and TanStack Query. It serves as a unified welfare and workload evaluation platform, accommodating four distinct user roles: Personnel, Welfare Officers, Commanding Officers, and Administrators.
 
+Project reference material is organised in [`docs/`](./docs/):
+
+- [Product overview](./docs/PRODUCT.md)
+- [Design guide](./docs/DESIGN.md)
+
 ---
 
 ## 1. Quick Start
