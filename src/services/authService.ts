@@ -1,6 +1,7 @@
 import { mockResolve, mockReject } from '@/lib/mockAdapter';
 import type { AuthUser, AuthTokens } from '@/types/auth';
 import type { ApiResponse } from '@/types/api';
+import { apiClient } from '@/services/apiClient';
 
 export const MOCK_USERS: AuthUser[] = [
   { 
@@ -78,6 +79,40 @@ export const decodeJwtPayload = (token: string): any => {
 
 export const authService = {
   async login(serviceId: string, password: string): Promise<ApiResponse<{ tokens: AuthTokens; user: AuthUser }>> {
+    const useMocks = import.meta.env.VITE_USE_MOCKS === 'true';
+
+    if (!useMocks) {
+      try {
+        const response = await apiClient.post<any>('/auth/login', { username: serviceId, password });
+
+        const accessToken = response.access_token;
+        const refreshToken = response.access_token;
+
+        sessionStorage.setItem('kavach_at', accessToken);
+        sessionStorage.setItem('kavach_rt', refreshToken);
+
+        const realUser: AuthUser = {
+            id: response.user.id,
+            displayName: response.user.id,
+            serviceId: response.user.id,
+            role: response.user.role as AuthUser['role'],
+            unitId: 'UNIT-REAL',
+            permissions: [],
+            avatarInitials: response.user.id.substring(0, 2).toUpperCase()
+        };
+
+        return {
+          data: {
+            tokens: { accessToken, refreshToken },
+            user: realUser,
+          }
+        };
+      } catch (err) {
+        return mockReject('Invalid credentials.', 'UNAUTHORIZED', 401) as any;
+      }
+    }
+
+    // Mock Implementation
     const foundUser = MOCK_USERS.find((u) => u.serviceId === serviceId);
     
     if (!foundUser || password !== 'demo1234') {
@@ -104,7 +139,7 @@ export const authService = {
       iat,
     });
 
-    // Simulate session cookie storage for prototype demo
+    sessionStorage.setItem('kavach_at', accessToken);
     sessionStorage.setItem('kavach_rt', refreshToken);
 
     return mockResolve({
@@ -116,6 +151,7 @@ export const authService = {
   },
 
   async logout(): Promise<ApiResponse<void>> {
+    sessionStorage.removeItem('kavach_at');
     sessionStorage.removeItem('kavach_rt');
     return mockResolve({
       data: undefined as any,
@@ -123,6 +159,14 @@ export const authService = {
   },
 
   async refresh(refreshToken: string): Promise<ApiResponse<AuthTokens>> {
+    const useMocks = import.meta.env.VITE_USE_MOCKS === 'true';
+    if (!useMocks) {
+      const response = await apiClient.post<{ access_token: string }>('/auth/refresh', undefined);
+      const accessToken = response.access_token;
+      sessionStorage.setItem('kavach_at', accessToken);
+      sessionStorage.setItem('kavach_rt', accessToken);
+      return { data: { accessToken, refreshToken: accessToken } };
+    }
     try {
       const payload = decodeJwtPayload(refreshToken);
       if (!payload || payload.exp < Date.now() / 1000) {
@@ -168,6 +212,21 @@ export const authService = {
   },
 
   async me(accessToken: string): Promise<ApiResponse<AuthUser>> {
+    const useMocks = import.meta.env.VITE_USE_MOCKS === 'true';
+    if (!useMocks) {
+      const response = await apiClient.get<{ id: string; role: AuthUser['role'] }>('/auth/me');
+      return {
+        data: {
+          id: response.id,
+          displayName: response.id,
+          serviceId: response.id,
+          role: response.role,
+          unitId: 'UNIT-REAL',
+          permissions: [],
+          avatarInitials: response.id.substring(0, 2).toUpperCase(),
+        },
+      };
+    }
     try {
       const payload = decodeJwtPayload(accessToken);
       if (!payload || payload.exp < Date.now() / 1000) {

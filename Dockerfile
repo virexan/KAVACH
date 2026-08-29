@@ -1,8 +1,12 @@
 # Stage 1: Build the React Application
 FROM node:20-alpine AS builder
 WORKDIR /app
+ARG VITE_API_BASE_URL=/api/v1
+ARG VITE_USE_MOCKS=false
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
+    VITE_USE_MOCKS=$VITE_USE_MOCKS
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
 RUN npm run build
 

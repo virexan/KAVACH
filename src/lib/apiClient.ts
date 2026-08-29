@@ -1,6 +1,6 @@
 import type { ApiResponse, ApiError } from '@/types/api';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true';
 const IS_PROD = import.meta.env.PROD;
 
@@ -26,6 +26,10 @@ export const apiClient = {
     const requestHeaders = new Headers(headers);
     if (!requestHeaders.has('Content-Type') && !(rest.body instanceof FormData)) {
       requestHeaders.set('Content-Type', 'application/json');
+    }
+    const accessToken = sessionStorage.getItem('kavach_at');
+    if (accessToken && !requestHeaders.has('Authorization')) {
+      requestHeaders.set('Authorization', `Bearer ${accessToken}`);
     }
 
     // Log request parameters if not in production (protecting privacy)
