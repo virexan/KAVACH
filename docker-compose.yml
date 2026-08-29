@@ -5,12 +5,10 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: kavach-postgres
-    ports:
-      - "5432:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: kavach_welfare
+      POSTGRES_USER: ${POSTGRES_USER:-kavach}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-kavach_welfare}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -19,14 +17,15 @@ services:
   kavach-backend:
     container_name: kavach-backend
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ml/Dockerfile
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/kavach_welfare
-      - JWT_SECRET=super_secret_jwt_sign_key_for_development_purposes_only_change_in_production
-      - ENVIRONMENT=development
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kavach}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-kavach_welfare}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET (at least 32 characters) in .env}
+      DEMO_AUTH_ENABLED: ${DEMO_AUTH_ENABLED:-false}
+      ENVIRONMENT: production
     depends_on:
       - postgres
     restart: unless-stopped
@@ -37,12 +36,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+        VITE_USE_MOCKS: "false"
     ports:
       - "8080:80"
-    environment:
-      - VITE_API_BASE_URL=http://localhost:8000/api/v1
-      - VITE_USE_MOCKS=false
-      - VITE_APP_ENV=production
     depends_on:
       - kavach-backend
     restart: unless-stopped

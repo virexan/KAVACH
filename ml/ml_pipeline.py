@@ -23,7 +23,7 @@ logger = logging.getLogger("welfare_pipeline")
 if not logger.handlers:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
-from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.model_selection import train_test_split, StratifiedKFold, GroupShuffleSplit
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, f1_score, precision_score, recall_score, brier_score_loss
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
@@ -114,7 +114,7 @@ def sanitize_feature_dict(data: dict) -> dict:
                 val = max(float(min_v), min(float(max_v), val))
             except (ValueError, TypeError):
                 val = float(default_v)
-        
+
         # Cast integer codes
         if col in ('bmi_code', 'mood_code', 'deployment_days', 'consecutive_shifts', 'leave_deficit_days'):
             cleaned[col] = int(round(val))
@@ -611,13 +611,17 @@ class Level2MLRiskModel:
         X = df[FEATURE_COLS]
         y = df['risk_tier']
 
-        # Train / Val / Test (70 / 15 / 15)
-        X_train_val, X_test, y_train_val, y_test = train_test_split(
-            X, y, test_size=0.15, random_state=42, stratify=y
-        )
-        X_train, X_val, y_train, y_val = train_test_split(
-            X_train_val, y_train_val, test_size=0.1765, random_state=42, stratify=y_train_val
-        )
+        # Train / Val / Test (70 / 15 / 15) using GroupShuffleSplit on personnel_id
+        gss = GroupShuffleSplit(n_splits=1, test_size=0.15, random_state=42)
+        train_val_idx, test_idx = next(gss.split(X, y, groups=df['personnel_id']))
+        X_train_val, y_train_val = X.iloc[train_val_idx], y.iloc[train_val_idx]
+        X_test, y_test = X.iloc[test_idx], y.iloc[test_idx]
+        groups_train_val = df['personnel_id'].iloc[train_val_idx]
+
+        gss_val = GroupShuffleSplit(n_splits=1, test_size=0.1765, random_state=42)
+        train_idx, val_idx = next(gss_val.split(X_train_val, y_train_val, groups=groups_train_val))
+        X_train, y_train = X_train_val.iloc[train_idx], y_train_val.iloc[train_idx]
+        X_val, y_val = X_train_val.iloc[val_idx], y_train_val.iloc[val_idx]
 
         print(f"[Level 2 ML] Split sizes: Train={X_train.shape[0]}, Val={X_val.shape[0]}, Test={X_test.shape[0]}")
 
@@ -676,7 +680,7 @@ class Level2MLRiskModel:
             y_test_dummies = pd.get_dummies(y_test).values
             test_roc_auc_val = float(roc_auc_score(y_test_dummies, y_test_prob, multi_class='ovr', average='macro'))
         except Exception:
-            test_roc_auc_val = 0.99
+            test_roc_auc_val = float('nan')
 
         test_cm = confusion_matrix(y_test, y_test_pred, labels=all_class_labels).tolist()
         test_report = classification_report(y_test, y_test_pred, labels=all_class_labels, target_names=RISK_TIERS, output_dict=True, zero_division=0)
@@ -691,7 +695,7 @@ class Level2MLRiskModel:
             y_train_dummies = pd.get_dummies(y_train).values
             train_roc_auc_val = float(roc_auc_score(y_train_dummies, y_train_prob, multi_class='ovr', average='macro'))
         except Exception:
-            train_roc_auc_val = 0.99
+            train_roc_auc_val = float('nan')
 
         train_cm = confusion_matrix(y_train, y_train_pred, labels=all_class_labels).tolist()
         train_report = classification_report(y_train, y_train_pred, labels=all_class_labels, target_names=RISK_TIERS, output_dict=True, zero_division=0)
@@ -1150,7 +1154,27 @@ class WelfareRiskProfileManager:
         """Explicit startup lifecycle initialization to prevent request-time training DoS."""
         print("[Profile Manager] Initializing dataset and ML model...")
         self.personnel_df = self.processor.parse_raw_dataset(excel_path)
-        self.ml_model.train_and_evaluate(self.personnel_df)
+
+        # Load model instead of retraining on startup if it exists
+        model_path = os.path.join(DEFAULT_MODEL_DIR, "welfare_ml_model.joblib")
+        meta_path = os.path.join(DEFAULT_MODEL_DIR, "model_metadata.json")
+        if os.path.exists(model_path) and os.path.exists(meta_path):
+            print(f"[Profile Manager] Loading existing model from {model_path}...")
+            # Ideally verify model hash/signature here to prevent supply-chain attacks
+            self.ml_model.model = joblib.load(model_path)
+            with open(meta_path, "r") as f:
+                self.ml_model.metrics = json.load(f)
+            self.ml_model.is_fitted = True
+
+            # Initialize SHAP explainer
+            if SHAP_AVAILABLE:
+                try:
+                    self.ml_model.explainer = shap.TreeExplainer(self.ml_model.model)
+                except Exception:
+                    pass
+        else:
+            self.ml_model.train_and_evaluate(self.personnel_df)
+
         self.is_initialized = True
         print(f"[Profile Manager] Initialized successfully with {len(self.personnel_df)} personnel profiles.")
 
@@ -1365,7 +1389,7 @@ class WelfareRiskProfileManager:
                 "top_factor": top_factors[0] if top_factors else "Operational Workload"
             })
 
-        return {
+        overview = {
             "unit_name": "Taskforce Alpha - 7th Welfare Division",
             "total_personnel": total_personnel,
             "risk_distribution": dist,
@@ -1379,6 +1403,11 @@ class WelfareRiskProfileManager:
             "watchlist": watchlist,
             "model_metadata": self.ml_model.metrics
         }
+        # Commanders receive aggregate intelligence only; individual watchlists
+        # remain available exclusively to welfare officers and administrators.
+        if str(role).strip().upper() == "COMMANDER":
+            overview.pop("watchlist", None)
+        return overview
 
     def get_all_personnel_summary(self, page=1, limit=50, filter_tier=None, search=None, role: str = "WELFARE_OFFICER") -> dict:
         """Returns paginated personnel risk list with role-based field filtering."""

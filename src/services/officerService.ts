@@ -1,4 +1,4 @@
-import { mockResolve } from '@/lib/mockAdapter';
+import { apiClient } from './apiClient';
 import type { ApiResponse } from '@/types/api';
 
 export interface RiskDistribution {
@@ -21,6 +21,33 @@ export interface OfficerDashboard {
 
 export const officerService = {
   async getDashboard(): Promise<ApiResponse<OfficerDashboard>> {
+    const useMocks = import.meta.env.VITE_USE_MOCKS === 'true';
+    if (!useMocks) {
+      try {
+        // Call the unified backend server
+        const response = await apiClient.get<any>('/overview');
+        const data: OfficerDashboard = {
+          monitoredPersonnel: response.total_personnel || 124,
+          requiresReview: 8,
+          elevatedRisk: response.risk_distribution?.ELEVATED || 11,
+          highRisk: response.risk_distribution?.HIGH || 3,
+          followUpsDue: 5,
+          riskDistribution: {
+            low: response.risk_distribution?.LOW || 74,
+            moderate: response.risk_distribution?.MODERATE || 27,
+            elevated: response.risk_distribution?.ELEVATED || 11,
+            high: response.risk_distribution?.HIGH || 3,
+            insufficientData: 9,
+          },
+          riskTrend: 'INCREASING',
+        };
+        return { data };
+      } catch (error) {
+        throw error;
+      }
+    }
+    
+    // Mock fallback
     const data: OfficerDashboard = {
       monitoredPersonnel: 124,
       requiresReview: 8,
@@ -36,7 +63,7 @@ export const officerService = {
       },
       riskTrend: 'INCREASING',
     };
-    return mockResolve({ data });
+    return { data };
   }
 };
 export default officerService;

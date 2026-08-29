@@ -15,6 +15,11 @@ dist
 dist-ssr
 *.local
 
+# ML runtime artifacts and sensitive datasets must not enter source control.
+ml/__pycache__/
+ml/data/raw/
+ml/data/processed/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
